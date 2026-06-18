@@ -1,0 +1,4 @@
+dist
+bin
+obj/**
+obj/ShutdownApi.csproj.nuget.g.props
