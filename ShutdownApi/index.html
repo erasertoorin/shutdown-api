@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Server Shutdown</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0d0d0d;
+        font-family: "Courier New", monospace;
+      }
+
+      .container {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 4px;
+        padding: 48px 40px;
+        width: 360px;
+        text-align: center;
+      }
+
+      .icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 28px;
+        border: 2px solid #c0392b;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .icon svg {
+        width: 24px;
+        height: 24px;
+        stroke: #c0392b;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      h1 {
+        font-size: 13px;
+        font-weight: 400;
+        color: #555;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 32px;
+      }
+
+      input[type="password"] {
+        width: 100%;
+        background: #0a0a0a;
+        border: 1px solid #222;
+        border-radius: 2px;
+        color: #e0e0e0;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        padding: 12px 14px;
+        outline: none;
+        transition: border-color 0.2s;
+        letter-spacing: 2px;
+        margin-bottom: 16px;
+      }
+
+      input[type="password"]:focus {
+        border-color: #c0392b;
+      }
+
+      input[type="password"]::placeholder {
+        letter-spacing: 1px;
+        color: #333;
+      }
+
+      button {
+        width: 100%;
+        background: #c0392b;
+        border: none;
+        border-radius: 2px;
+        color: #fff;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        font-weight: 400;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        padding: 13px;
+        cursor: pointer;
+        transition:
+          background 0.2s,
+          opacity 0.2s;
+      }
+
+      button:hover {
+        background: #a93226;
+      }
+      button:active {
+        opacity: 0.8;
+      }
+      button:disabled {
+        background: #333;
+        color: #555;
+        cursor: not-allowed;
+      }
+
+      .message {
+        margin-top: 20px;
+        font-size: 12px;
+        letter-spacing: 1px;
+        min-height: 18px;
+      }
+
+      .message.error {
+        color: #c0392b;
+      }
+      .message.success {
+        color: #27ae60;
+      }
+      .message.info {
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+          <line x1="12" y1="2" x2="12" y2="12" />
+        </svg>
+      </div>
+      <h1>Server Shutdown</h1>
+
+      <input type="password" id="pw" placeholder="Passwort" autofocus />
+      <button id="btn" onclick="doShutdown()">Herunterfahren</button>
+      <div class="message info" id="msg"></div>
+    </div>
+
+    <script>
+      const API_URL = "http://localhost:9999/api/shutdown"; // Port anpassen falls nötig
+
+      document.getElementById("pw").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doShutdown();
+      });
+
+      async function doShutdown() {
+        const pw = document.getElementById("pw").value.trim();
+        const btn = document.getElementById("btn");
+        const msg = document.getElementById("msg");
+
+        if (!pw) {
+          setMsg("Passwort eingeben.", "error");
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Wird gesendet...";
+        setMsg("", "info");
+
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: pw }),
+          });
+
+          if (res.ok) {
+            setMsg("Server wird heruntergefahren...", "success");
+            btn.textContent = "Shutdown ausgelöst";
+          } else if (res.status === 401) {
+            setMsg("Falsches Passwort.", "error");
+            btn.disabled = false;
+            btn.textContent = "Herunterfahren";
+            document.getElementById("pw").value = "";
+            document.getElementById("pw").focus();
+          } else {
+            setMsg("Fehler: " + res.status, "error");
+            btn.disabled = false;
+            btn.textContent = "Herunterfahren";
+          }
+        } catch (e) {
+          setMsg("API nicht erreichbar.", "error");
+          btn.disabled = false;
+          btn.textContent = "Herunterfahren";
+        }
+      }
+
+      function setMsg(text, type) {
+        const el = document.getElementById("msg");
+        el.textContent = text;
+        el.className = "message " + type;
+      }
+    </script>
+  </body>
+</html>
